@@ -1,45 +1,139 @@
+# Importa todos os objetos do tkinter
 from tkinter import *
 
+# Importa o messagebox do tkinter
+import tkinter.messagebox
 
-# Procurar insumo
-def btn_clicked0():
-    print("Procurar insumo")
+# Importa o pyodbc
+import pyodbc
 
-    # Obter nome do insumo
-    nome_insumo = entry1.get()
+# Dados para conexão
+driver = "{SQL Server}"
+server = "DESKTOP-UP32DT2"
+db = "Estoque"
+
+# Dados da conexão
+dados_conexao = f"Driver={driver};Server={server};Database={db}"
+
+# Conexão
+conexao = pyodbc.connect(dados_conexao)
+
+# Criação de um cursor para executar instruções SQL
+cursor = conexao.cursor()
 
 
-# Deletar insumo
-def btn_clicked1():
-    print("Deletar insumo")
-
-    # Obter nome do insumo
-    nome_insumo = entry1.get()
-
-
-# Registrar insumo
-def btn_clicked2():
-    print("Registrar insumo")
-
+# Adicionar insumo (CREATE)
+def adicionar_insumo():
     # Obter informações do insumo
     nome_insumo = entry1.get()
     data_validade = entry2.get()
     lote = entry3.get()
     qtde = entry4.get()
 
+    # Comando para adicionar um insumo no banco de dados
+    comando = f"""INSERT INTO Insumos(nome_insumo, data_validade, lote, qtde)
+        VALUES
+            ('{nome_insumo}', '{data_validade}', '{lote}', '{qtde}')"""
 
-# Adicionar insumo
-def btn_clicked3():
-    print("Adicionar insumo")
+    # Executa o comando
+    cursor.execute(comando)
 
+    # Faz o commit do comando para salvar a alteração no banco de dados
+    cursor.commit()
+
+    # Exibe uma mensagem para alertar o usuário de que um novo registro foi criado
+    tkinter.messagebox.showinfo(
+        title="Aviso de Insumo Adicionado",
+        message="Insumo adicionado com sucesso!")
+
+    # Limpa todos os campos preenchidos
+    entry1.delete(first=0, last=END)
+    entry2.delete(first=0, last=END)
+    entry3.delete(first=0, last=END)
+    entry4.delete(first=0, last=END)
+
+
+# Procurar insumo (READ)
+def procurar_insumo():
+    # Obter nome do insumo
+    nome_insumo = entry1.get()
+
+    # Comando para procurar o insumo no banco de dados
+    comando = f"SELECT * FROM Insumos WHERE nome_insumo = '{nome_insumo}'"
+
+    # Faz o cursor executar o comando
+    cursor.execute(comando)
+
+    # Percorre a lista de tuplas armazenada no cursor
+    for linha in cursor.fetchall():
+        # Mensagem a ser exibida na caixa de resultados (entry0)
+        mensagem = f"Item: {linha.nome_insumo}\nData de validade: {linha.data_validade}\n" \
+                   f"Lote: {linha.lote}\nQuantidade: {linha.qtde}"
+
+        # Limpa o campo de resultados
+        entry0.delete("1.0", END)
+
+        # Coloca a mensagem na caixa de resultados
+        entry0.insert("1.0", mensagem)
+
+
+
+
+
+# Registrar uso de insumo (UPDATE)
+def registrar_uso_insumo():
     # Obter nome do insumo
     nome_insumo = entry1.get()
 
     # Obter quantidade
     qtde = entry4.get()
 
+    # Comando para atualizar o banco de dados
+    comando = f"""UPDATE Insumos
+        SET qtde = qtde - {qtde}
+        WHERE nome_insumo = '{nome_insumo}'"""
+
+    # Faz o cursor executar o comando
+    cursor.execute(comando)
+
+    # Faz o commit do comando
+    cursor.commit()
+
+    # Exibe uma mensagem para o usuário
+    tkinter.messagebox.showinfo(
+        title="Aviso de Uso de Insumo",
+        message=f"{qtde} unidades de {nome_insumo} foram usadas.")
+
+    # Limpa os campos preenchidos
+    entry1.delete(first=0, last=END)
+    entry4.delete(first=0, last=END)
+
+# Deletar insumo (DELETE)
+def deletar_insumo():
+    # Obter nome do insumo
+    nome_insumo = entry1.get()
+
+    # Comando para deletar insumo do banco de dados
+    comando = f"DELETE FROM Insumos WHERE nome_insumo = '{nome_insumo}'"
+
+    # Faz o cursor executar o comando
+    cursor.execute(comando)
+
+    # Faz o commit do comando
+    cursor.commit()
+
+    # Exibe uma mensagem para o usuário de que um insumo foi removido
+    tkinter.messagebox.showinfo(
+        title="Aviso de insumo removido",
+        message=f"{nome_insumo} foi removido com sucesso!")
+
+    # Limpa o campo preenchido
+    entry1.delete(first=0, last=END)
+
 
 window = Tk()
+
+window.title("Sistema de Controle de Estoque")
 
 window.geometry("711x646")
 window.configure(bg="#ffffff")
@@ -64,7 +158,7 @@ b0 = Button(
     image=img0,
     borderwidth=0,
     highlightthickness=0,
-    command=btn_clicked0,
+    command=procurar_insumo,
     relief="flat")
 
 b0.place(
@@ -77,7 +171,7 @@ b1 = Button(
     image=img1,
     borderwidth=0,
     highlightthickness=0,
-    command=btn_clicked1,
+    command=deletar_insumo,
     relief="flat")
 
 b1.place(
@@ -90,7 +184,7 @@ b2 = Button(
     image=img2,
     borderwidth=0,
     highlightthickness=0,
-    command=btn_clicked2,
+    command=registrar_uso_insumo,
     relief="flat")
 
 b2.place(
@@ -103,7 +197,7 @@ b3 = Button(
     image=img3,
     borderwidth=0,
     highlightthickness=0,
-    command=btn_clicked3,
+    command=adicionar_insumo,
     relief="flat")
 
 b3.place(
